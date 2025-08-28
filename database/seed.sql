@@ -38,12 +38,12 @@ INSERT INTO orders (order_number, customer_email, customer_name, shipping_addres
 ('ORD-20240101-001', 'john.doe@email.com', 'John Doe', 
  '{"street": "123 Main St", "city": "New York", "state": "NY", "zip": "10001", "country": "USA"}',
  '{"street": "123 Main St", "city": "New York", "state": "NY", "zip": "10001", "country": "USA"}',
- 329.98, 15.00, 29.70, 374.68, 374.68, 'delivered', 'paid', 'regular', 'VIP customer', '1Z999AA10123456784', '2024-01-05 14:30:00'),
+ 329.98, 15.00, 29.70, 374.68, 374.68, 'delivered', 'paid', 'regular', 'VIP customer', '1Z999AA10123456784'),
 
 ('ORD-20240102-002', 'jane.smith@email.com', 'Jane Smith',
  '{"street": "456 Oak Ave", "city": "Los Angeles", "state": "CA", "zip": "90001", "country": "USA"}',
  '{"street": "456 Oak Ave", "city": "Los Angeles", "state": "CA", "zip": "90001", "country": "USA"}',
- 249.99, 20.00, 24.30, 294.29, 294.29, 'shipped', 'paid', 'regular', NULL, '1Z999BB20234567895', '2024-01-08 10:15:00'),
+ 249.99, 20.00, 24.30, 294.29, 294.29, 'shipped', 'paid', 'regular', NULL, '1Z999BB20234567895'),
 
 -- Pending orders
 ('ORD-20240115-003', 'mike.jones@email.com', 'Mike Jones',
@@ -83,13 +83,13 @@ INSERT INTO orders (order_number, customer_email, customer_name, shipping_addres
 ('ORD-20240110-009', 'lisa.white@email.com', 'Lisa White',
  '{"street": "888 Park Ave", "city": "Boston", "state": "MA", "zip": "02101", "country": "USA"}',
  '{"street": "888 Park Ave", "city": "Boston", "state": "MA", "zip": "02101", "country": "USA"}',
- 849.95, 45.00, 80.55, 975.50, 975.50, 'shipped', 'paid', 'regular', 'Bulk order - collector', '1Z999CC30345678906', '2024-01-12 16:45:00'),
+ 849.95, 45.00, 80.55, 975.50, 975.50, 'shipped', 'paid', 'regular', 'Bulk order - collector', '1Z999CC30345678906'),
 
 -- International order
 ('ORD-20240112-010', 'yuki.tanaka@email.jp', 'Yuki Tanaka',
  '{"street": "1-1-1 Shibuya", "city": "Tokyo", "state": "Tokyo", "zip": "150-0002", "country": "Japan"}',
  '{"street": "1-1-1 Shibuya", "city": "Tokyo", "state": "Tokyo", "zip": "150-0002", "country": "Japan"}',
- 259.99, 65.00, 0, 324.99, 324.99, 'delivered', 'paid', 'regular', 'International shipping', 'EMS123456789JP', '2024-01-20 09:30:00');
+ 259.99, 65.00, 0, 324.99, 324.99, 'delivered', 'paid', 'regular', 'International shipping', 'EMS123456789JP');
 
 -- Insert order items
 INSERT INTO order_items (order_id, product_id, sku, product_name, quantity, unit_price, total_price, is_pre_order) VALUES

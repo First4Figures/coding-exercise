@@ -12,13 +12,13 @@ Build a Node.js API with PostgreSQL that handles:
 - Automated webhook processing for fulfillment updates
 - A simple analytics dashboard
 
-**Time Estimate**: ~1 hour (take the time you need, but keep it concise)
+**Time Estimate**: 60-75 minutes (allow extra time for setup and troubleshooting)
 
 ---
 
 ## 📋 Requirements
 
-### Part 1: Database & API Setup (20 minutes)
+### Part 1: Database & API Setup (15-20 minutes)
 
 1. **Set up PostgreSQL Database**
    - Use the provided `docker-compose.yml` to start PostgreSQL
@@ -39,7 +39,7 @@ Build a Node.js API with PostgreSQL that handles:
    - `GET /api/orders/:id` - Get order details
    - `PATCH /api/orders/:id/status` - Update order status
 
-### Part 2: Business Logic Implementation (15 minutes)
+### Part 2: Business Logic Implementation (20-25 minutes)
 
 Implement these business rules:
 
@@ -53,7 +53,7 @@ Implement these business rules:
    - Support partial payments (deposits for pre-orders)
    - Validate stock availability before confirming orders
 
-### Part 3: Webhook Automation (15 minutes)
+### Part 3: Webhook Automation (15-20 minutes)
 
 1. **Webhook Handler:**
    - `POST /api/webhooks/fulfillment` - Receive shipping updates
@@ -77,7 +77,9 @@ Implement these business rules:
    }
    ```
 
-### Part 4: Analytics Dashboard (10 minutes)
+   **Note:** Some events like `inventory.restocked` may not require an `order_id`.
+
+### Part 4: Analytics Dashboard (10-15 minutes)
 
 Create a simple HTML page (`public/dashboard.html`) that:
 
@@ -135,8 +137,11 @@ Create a simple HTML page (`public/dashboard.html`) that:
    
    # Install dependencies (if using Node.js)
    npm init -y
-   npm install express pg dotenv
+   npm install express@4 pg dotenv cors
    npm install -D nodemon
+   
+   # Wait for database to be ready (10-15 seconds)
+   sleep 10
    
    # Create database tables
    psql -h localhost -U postgres -d collectibles_db -f database/schema.sql
@@ -151,7 +156,59 @@ Create a simple HTML page (`public/dashboard.html`) that:
    ```
 
 4. **Test your API:**
-   Use Postman, curl, or the provided test commands in `test-api.md`
+   Use Postman, curl, or the provided test commands below
+
+---
+
+## 🔧 Common Issues & Troubleshooting
+
+**Database Connection Issues:**
+- If you get "database does not exist" errors, make sure PostgreSQL container is fully started
+- Wait 10-15 seconds after `docker-compose up -d` before running schema commands
+- Check container status: `docker ps` - both db and redis should show "healthy" status
+
+**Express Version Issues:**
+- We specify `express@4` to avoid compatibility issues with Express 5
+- If you see "Missing parameter name" errors, ensure you're using Express 4
+
+**ULID Generation Errors:**
+- If you see "gen_random_bytes function does not exist", the pgcrypto extension needs to be enabled
+- This should be handled automatically by the schema, but you can manually run:
+  ```bash
+  docker exec coding-exercise-db-1 psql -U postgres -d collectibles_db -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+  ```
+
+**Port Already in Use:**
+- If port 3000 is busy, change `PORT=3000` in your `.env` file
+- PostgreSQL port 5432 conflicts can be resolved by stopping other PostgreSQL instances
+
+---
+
+## 🧪 Testing Your Solution
+
+Test your API endpoints with these commands:
+
+```bash
+# Check server health
+curl http://localhost:3000/health
+
+# List all products
+curl http://localhost:3000/api/products
+
+# Get low stock items
+curl http://localhost:3000/api/products?low_stock=true
+
+# Get single product
+curl http://localhost:3000/api/products/FF-SONIC-001
+
+# Test webhook (inventory restock - no order_id needed)
+curl -X POST http://localhost:3000/api/webhooks/fulfillment \
+  -H "Content-Type: application/json" \
+  -d '{"event": "inventory.restocked", "items": [{"sku": "FF-SONIC-001", "quantity_added": 10, "new_total": 460}]}'
+
+# View dashboard
+open http://localhost:3000
+```
 
 ---
 

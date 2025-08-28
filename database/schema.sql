@@ -1,6 +1,9 @@
 -- Collectibles Management System Database Schema
 -- PostgreSQL 14+
 
+-- Enable the pgcrypto extension for gen_random_bytes
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Create ULID generation function
 CREATE OR REPLACE FUNCTION generate_ulid() RETURNS text AS $$
 DECLARE

@@ -2,6 +2,8 @@
 
 This file contains example webhook payloads that your system should handle. Use these for testing your webhook endpoints.
 
+**Important Note:** Not all webhook events require an `order_id`. Events like `inventory.restocked`, `inventory.low_stock`, and `preorder.status_updated` are system-level events that don't relate to specific orders.
+
 ## Testing Webhooks
 
 You can test webhooks using curl, Postman, or any HTTP client:
@@ -255,11 +257,12 @@ curl -X POST http://localhost:3000/api/webhooks/fulfillment \
     "items": [{"sku": "FF-MARIO-003", "quantity": 1}]
   }'
 
-# Test inventory restock
+# Test inventory restock (no order_id required)
 curl -X POST http://localhost:3000/api/webhooks/fulfillment \
   -H "Content-Type: application/json" \
   -d '{
     "event": "inventory.restocked",
+    "warehouse_id": "WH-001",
     "items": [
       {"sku": "FF-KRATOS-008", "quantity_added": 25, "new_total": 28}
     ]
