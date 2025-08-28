@@ -1,217 +1,219 @@
+# Full-Stack Developer Coding Exercise - Collectibles Management System
 
-# Senior Software Engineer Coding Exercise
-
-Welcome! In this exercise, you'll build a simple Rails API application focused on basic CRUD operations with JWT-based authentication. This test will help us evaluate your skills with Ruby on Rails, Rails API mode, PostgreSQL, RSpec, and JSON Web Tokens (JWT).
-
----
-
-### Objective
-
-Create a basic Rails API with the following requirements:
-
-- Set up a Rails API with PostgreSQL as the database.
-- Implement a hardcoded JWT-based authentication.
-- Create basic CRUD endpoints for an `Order` model.
-- Implement an order status mechanism to track the payment state of an order.
-- Write RSpec tests to verify your API functionality, authentication, and order status transitions.
-
-### Time Estimate
-
-**Approximately 1 hour** – Take the time you need to complete the exercise comfortably, but try to keep it concise.
+Welcome! In this exercise, you'll build a backend API and simple dashboard for managing a collectibles/figurines store inventory system. This exercise simulates real-world challenges in e-commerce operations, inspired by businesses like First4Figures and Figgyz.
 
 ---
 
-## Instructions
+## 🎯 Objective
 
-### Step 1: Set Up the Rails API Application
+Build a Node.js API with PostgreSQL that handles:
+- Inventory management for limited edition collectibles
+- Pre-order and payment tracking
+- Automated webhook processing for fulfillment updates
+- A simple analytics dashboard
 
-1. **Create a New Rails API Project**:
+**Time Estimate**: ~1 hour (take the time you need, but keep it concise)
 
+---
+
+## 📋 Requirements
+
+### Part 1: Database & API Setup (20 minutes)
+
+1. **Set up PostgreSQL Database**
+   - Use the provided `docker-compose.yml` to start PostgreSQL
+   - Create tables for: `products`, `orders`, `order_items`, `inventory_logs`, `webhooks`
+   - Use the schema provided in `database/schema.sql`
+
+2. **Build REST API Endpoints**
+   
+   Create the following endpoints:
+   
+   **Products/Inventory:**
+   - `GET /api/products` - List all products with current stock
+   - `GET /api/products/:sku` - Get single product details
+   - `PATCH /api/products/:sku/inventory` - Update stock levels
+   
+   **Orders:**
+   - `POST /api/orders` - Create new order
+   - `GET /api/orders/:id` - Get order details
+   - `PATCH /api/orders/:id/status` - Update order status
+
+### Part 2: Business Logic Implementation (15 minutes)
+
+Implement these business rules:
+
+1. **Inventory Management:**
+   - Track available vs allocated stock
+   - Pre-orders can exceed current stock but track separately
+   - Automatically flag products when stock < 10% of edition size
+
+2. **Order Processing:**
+   - Calculate order totals including shipping
+   - Support partial payments (deposits for pre-orders)
+   - Validate stock availability before confirming orders
+
+### Part 3: Webhook Automation (15 minutes)
+
+1. **Webhook Handler:**
+   - `POST /api/webhooks/fulfillment` - Receive shipping updates
+   
+   When a fulfillment webhook is received:
+   - Update order status
+   - Adjust inventory counts
+   - Log the webhook for debugging
+   - Return appropriate response codes
+
+2. **Sample Webhook Payload:**
+   ```json
+   {
+     "event": "shipment.updated",
+     "order_id": "ORD-001",
+     "tracking_number": "1Z999AA10123456784",
+     "status": "shipped",
+     "items": [
+       {"sku": "FF-SONIC-001", "quantity": 1}
+     ]
+   }
+   ```
+
+### Part 4: Analytics Dashboard (10 minutes)
+
+Create a simple HTML page (`public/dashboard.html`) that:
+
+1. Fetches and displays:
+   - Top 5 selling products
+   - Current low-stock alerts
+   - Order statistics (total, pending, shipped)
+   - Pre-order vs in-stock sales ratio
+
+2. Updates data every 30 seconds
+
+3. Basic styling (keep it simple, functionality over aesthetics)
+
+---
+
+## 🌟 Bonus Points (Optional Enhancements)
+
+**Performance Optimizations:**
+- [ ] Implement caching for frequently accessed product data
+- [ ] Add database indexes on commonly queried fields
+- [ ] Batch process webhook events
+- [ ] Use connection pooling for database
+
+**Advanced Features:**
+- [ ] Add pagination to GET endpoints (limit/offset)
+- [ ] Implement rate limiting (e.g., 100 requests/minute)
+- [ ] Create waitlist functionality when items are out of stock
+- [ ] Add currency conversion (USD/EUR/GBP)
+- [ ] Generate CSV export for orders
+- [ ] Implement soft deletes with `deleted_at` timestamps
+- [ ] Add search/filter capabilities to product listing
+
+**Code Quality:**
+- [ ] Input validation using Joi or similar
+- [ ] Custom error classes with proper error codes
+- [ ] Environment variables for all configuration
+- [ ] Basic unit tests for critical functions
+- [ ] API documentation (comments or README)
+- [ ] Logging for important operations
+- [ ] Graceful error handling with meaningful messages
+
+**Data Integrity:**
+- [ ] Use database transactions for multi-table operations
+- [ ] Implement optimistic locking for inventory updates
+- [ ] Add data validation constraints at database level
+
+---
+
+## 🚀 Getting Started
+
+1. **Clone and Setup:**
    ```bash
-   rails new OrdersAPI --api -d postgresql
-   cd OrdersAPI
+   # Start PostgreSQL
+   docker-compose up -d
+   
+   # Install dependencies (if using Node.js)
+   npm init -y
+   npm install express pg dotenv
+   npm install -D nodemon
+   
+   # Create database tables
+   psql -h localhost -U postgres -d collectibles_db -f database/schema.sql
    ```
 
-2. **Set Up Database**:
+2. **Environment Variables:**
+   Copy `.env.example` to `.env` and update as needed
 
-   - Update `config/database.yml` with your PostgreSQL credentials.
-   - Create and migrate the database:
-
-     ```bash
-     rails db:create
-     rails db:migrate
-     ```
-
-3. **Generate Order Model**:
-
+3. **Run the application:**
    ```bash
-   rails generate model Order product_name:string quantity:integer price:decimal
-   rails db:migrate
+   npm run dev  # or node server.js
    ```
 
-### Step 2: Implement JWT Authentication
+4. **Test your API:**
+   Use Postman, curl, or the provided test commands in `test-api.md`
 
-We'll use a simple JWT-based authentication mechanism with a hardcoded token.
+---
 
-1. **Add JWT to Gemfile**:
+## 📁 Expected Project Structure
 
-   ```ruby
-   gem 'jwt'
-   ```
-
-   Run `bundle install` to install the gem.
-
-2. **Set Up Authentication in ApplicationController**:
-
-   In `app/controllers/application_controller.rb`, add a method to authenticate requests using a hardcoded JWT token.
-
-   ```ruby
-   class ApplicationController < ActionController::API
-     before_action :authenticate_request
-
-     private
-
-     def authenticate_request
-       token = request.headers['Authorization']
-       render json: { error: 'Unauthorized' }, status: :unauthorized unless valid_token?(token)
-     end
-
-     def valid_token?(token)
-       # Hardcoded token for this exercise
-       token == 'your_test_token'
-     end
-   end
-   ```
-
-   **Note**: In this setup, replace `'your_test_token'` with the token you’ll use in testing.
-
-### Step 3: Create the Orders Controller and Define Order Statuses
-
-1. **Generate Orders Controller**:
-
-   ```bash
-   rails generate controller Orders
-   ```
-
-2. **Define CRUD Actions for Orders**:
-
-   Implement the following actions in the `OrdersController`:
-   - `create`: Creates a new order with attributes `product_name`, `quantity`, and `price`.
-   - `show`: Retrieves an order by its ID.
-   - `update`: Updates the attributes of an existing order.
-   - `destroy`: Deletes an order.
-
-   Each action should return a JSON response. Handle errors gracefully with appropriate HTTP status codes (e.g., 422 for validation errors).
-
-3. **Implement Order Statuses**:
-
-   Add a mechanism to track the status of an order through various payment states:
-   - **Order Statuses**: The order can be in one of the following statuses:
-     - `pending_payment`
-     - `authorized`
-     - `partially_paid`
-     - `paid`
-     - `refunded`
-     - `partially_refunded`
-
-   Use an `order_status` attribute (as an enum or a separate `OrderStatus` model) to represent these statuses. The status should be updatable to simulate a real-world order flow, allowing it to transition between these states.
-
-4. **Apply Authentication**:
-
-   Use the `authenticate_request` method you created in `ApplicationController` to secure these endpoints so that they only allow requests with a valid JWT token.
-
-### Step 4: Add RSpec Tests for Order Status
-
-Write tests to ensure:
-- CRUD actions for the `Order` work as expected.
-- The `order_status` attribute or status mechanism can be updated and responds correctly.
-- Unauthorized requests return a `401 Unauthorized` response.
-
-### Step 5: Set Up Docker for PostgreSQL
-
-To simplify database setup, use Docker to run PostgreSQL. Here is a `docker-compose.yml` file to get started:
-
-```yaml
-version: '3.8'
-
-services:
-  db:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: orders_api_development
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    networks:
-      - backend
-
-networks:
-  backend:
-    driver: bridge
-
-volumes:
-  db_data:
+```
+/
+├── server.js                 # Main application file
+├── /routes                   # API route handlers
+│   ├── products.js
+│   ├── orders.js
+│   └── webhooks.js
+├── /database
+│   ├── schema.sql           # Database schema
+│   └── seed.sql            # Sample data
+├── /public
+│   └── dashboard.html       # Analytics dashboard
+├── .env.example            # Environment variables template
+├── docker-compose.yml      # PostgreSQL setup
+└── package.json           # Dependencies
 ```
 
-1. **Start PostgreSQL**:
-   Run the following command in the directory containing the `docker-compose.yml` file:
+---
 
-   ```bash
-   docker-compose up -d
-   ```
+## 📊 Sample Data
 
-2. **Database Configuration**:
-   In your Rails application, update the `config/database.yml` file with these settings:
-
-   ```yaml
-   default: &default
-     adapter: postgresql
-     encoding: unicode
-     host: db
-     username: postgres
-     password: password
-     pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-
-   development:
-     <<: *default
-     database: orders_api_development
-
-   test:
-     <<: *default
-     database: orders_api_test
-
-   production:
-     <<: *default
-     database: orders_api_production
-     username: orders_api
-     password: <%= ENV['ORDERS_API_DATABASE_PASSWORD'] %>
-   ```
-
-3. **Run Database Migrations**:
-   Once PostgreSQL is running, run the migrations:
-
-   ```bash
-   rails db:create db:migrate
-   ```
-
-### Submission
-
-1. **Code**: Submit your Rails application, including `OrdersController`, `Order` model, JWT authentication, and RSpec tests.
-2. **README**: Include a brief README explaining how to set up and run your application.
+Your database should include:
+- **Products**: Mix of in-stock items, pre-orders, and sold-out collectibles
+  - Examples: Limited edition figurines, statues, exclusive variants
+  - Include: SKU, name, edition_size, price, weight, status
+- **Orders**: Various order states (pending, paid, shipped, delivered)
+- **Inventory movements**: Stock adjustments, allocations, returns
 
 ---
 
-### Evaluation Criteria
+## 📤 Submission Instructions
 
-- **Correctness**: Does the API fulfill the requirements?
-- **Security**: Is JWT authentication correctly implemented?
-- **Code Quality**: Is the code well-organized and easy to understand?
-- **Testing**: Are the RSpec tests comprehensive and passing?
-- **Status Management**: Is the order status mechanism functional and correctly implemented?
+1. **Fork this repository** to your own GitHub account
+2. **Clone your fork** and work on your solution
+3. **Commit your changes** to your fork
+4. **Send us the link** to your forked repository when complete
+
+### Your submission should include:
+- Working API code with all endpoints implemented
+- Any additional files needed to run your solution
+- A `README.md` in your repository with:
+  - Clear setup and run instructions
+  - Any assumptions or decisions you made
+  - List of completed bonus features (if any)
+  - Any known issues or what you'd improve with more time
+
+### Important Notes:
+- Do NOT create a Pull Request to this repository
+- Make sure your repository is public so we can review it
+- Test your setup instructions on a clean environment if possible
 
 ---
 
-Good luck, and feel free to reach out if you have any questions!
+## ❓ Questions?
+
+Feel free to make reasonable assumptions about requirements. Document any assumptions in your README. 
+
+If you have any questions about the exercise requirements, please reach out to your hiring contact.
+
+Good luck! 🚀
