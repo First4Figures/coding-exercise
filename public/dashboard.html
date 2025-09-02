@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collectibles Management Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .product-list {
+            list-style: none;
+        }
+
+        .product-list li {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .product-list li:last-child {
+            border-bottom: none;
+        }
+
+        .low-stock {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .refresh-info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Collectibles Management Dashboard</h1>
+            <p>Real-time inventory and order analytics</p>
+        </div>
+
+        <div class="refresh-info">
+            Data refreshes every 30 seconds
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Orders</h3>
+                <div class="value" id="totalOrders">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pending Orders</h3>
+                <div class="value" id="pendingOrders">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Shipped Orders</h3>
+                <div class="value" id="shippedOrders">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pre-order Ratio</h3>
+                <div class="value" id="preorderRatio">-</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Top 5 Selling Products</h2>
+            <ul class="product-list" id="topProducts">
+                <li>Loading...</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Low Stock Alerts</h2>
+            <ul class="product-list" id="lowStockAlerts">
+                <li>Loading...</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Fetch and display dashboard data
+        async function fetchDashboardData() {
+            try {
+                // Fetch products for top sellers and low stock
+                const productsResponse = await fetch('/api/products');
+                const products = await productsResponse.json();
+
+                // Fetch orders for statistics
+                const ordersResponse = await fetch('/api/orders');
+                const orders = ordersResponse.ok ? await ordersResponse.json() : [];
+
+                updateDashboard(products, orders);
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+            }
+        }
+
+        function updateDashboard(products, orders) {
+            // Update order statistics
+            const totalOrders = orders.length;
+            const pendingOrders = orders.filter(o => o.status === 'pending').length;
+            const shippedOrders = orders.filter(o => o.status === 'shipped').length;
+            
+            // Calculate pre-order ratio
+            const preorderOrders = orders.filter(o => o.order_type === 'pre_order').length;
+            const instockOrders = orders.filter(o => o.order_type === 'in_stock').length;
+            const preorderRatio = totalOrders > 0 ? Math.round((preorderOrders / totalOrders) * 100) : 0;
+
+            document.getElementById('totalOrders').textContent = totalOrders;
+            document.getElementById('pendingOrders').textContent = pendingOrders;
+            document.getElementById('shippedOrders').textContent = shippedOrders;
+            document.getElementById('preorderRatio').textContent = preorderRatio + '%';
+
+            // Update top 5 selling products
+            const topProducts = products
+                .sort((a, b) => (b.total_sold || 0) - (a.total_sold || 0))
+                .slice(0, 5);
+
+            const topProductsList = document.getElementById('topProducts');
+            if (topProducts.length > 0) {
+                topProductsList.innerHTML = topProducts.map(product => `
+                    <li>
+                        <span>${product.name} (${product.sku})</span>
+                        <span>Sold: ${product.total_sold || 0}</span>
+                    </li>
+                `).join('');
+            } else {
+                topProductsList.innerHTML = '<li>No products found</li>';
+            }
+
+            // Update low stock alerts
+            const lowStockProducts = products.filter(p => 
+                p.stock_available > 0 && (p.stock_available / p.edition_size) < 0.1
+            );
+
+            const lowStockList = document.getElementById('lowStockAlerts');
+            if (lowStockProducts.length > 0) {
+                lowStockList.innerHTML = lowStockProducts.map(product => {
+                    const stockPercentage = Math.round((product.stock_available / product.edition_size) * 100);
+                    return `
+                        <li class="low-stock">
+                            <span>${product.name} (${product.sku})</span>
+                            <span>Stock: ${product.stock_available}/${product.edition_size} (${stockPercentage}%)</span>
+                        </li>
+                    `;
+                }).join('');
+            } else {
+                lowStockList.innerHTML = '<li>No low stock alerts</li>';
+            }
+        }
+
+        // Initial load
+        fetchDashboardData();
+
+        // Refresh every 30 seconds
+        setInterval(fetchDashboardData, 30000);
+    </script>
+</body>
+</html>

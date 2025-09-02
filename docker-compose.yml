@@ -9,7 +9,7 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./database:/docker-entrypoint-initdb.d
+      - ./postgres-init:/docker-entrypoint-initdb.d
     networks:
       - backend
     healthcheck:
@@ -29,6 +29,23 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=collectibles_db
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - NODE_ENV=development
+    depends_on:
+      - db
+      - redis
+    networks:
+      - backend
 
 networks:
   backend:
